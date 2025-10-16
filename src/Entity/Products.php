@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\ProductsRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductsRepository::class)]
@@ -22,11 +23,15 @@ class Products
     #[ORM\Column]
     private ?int $stock = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(type: Types::TEXT)]
     private ?string $description = null;
 
-    #[ORM\Column]
-    private ?int $category_id = null;
+    #[ORM\ManyToOne(inversedBy: 'products')]
+    private ?category $category_id = null;
+
+    #[ORM\ManyToOne(inversedBy: 'products_id')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Productsorders $productsorders = null;
 
     public function getId(): ?int
     {
@@ -81,14 +86,26 @@ class Products
         return $this;
     }
 
-    public function getCategoryId(): ?int
+    public function getCategoryId(): ?category
     {
         return $this->category_id;
     }
 
-    public function setCategoryId(int $category_id): static
+    public function setCategoryId(?category $category_id): static
     {
         $this->category_id = $category_id;
+
+        return $this;
+    }
+
+    public function getProductsorders(): ?Productsorders
+    {
+        return $this->productsorders;
+    }
+
+    public function setProductsorders(?Productsorders $productsorders): static
+    {
+        $this->productsorders = $productsorders;
 
         return $this;
     }
