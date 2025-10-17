@@ -28,9 +28,9 @@ class Client
     private ?string $email = null;
 
     /**
-     * @var Collection<int, Orders>
+     * @var Collection<int, Order>
      */
-    #[ORM\OneToMany(targetEntity: Orders::class, mappedBy: 'client_id')]
+    #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'client_id')]
     private Collection $orders;
 
     public function __construct()
@@ -103,7 +103,7 @@ class Client
     {
         if (!$this->orders->contains($order)) {
             $this->orders->add($order);
-            $order->setClientId($this);
+            $order->setClient($this);
         }
 
         return $this;
@@ -113,8 +113,8 @@ class Client
     {
         if ($this->orders->removeElement($order)) {
             // set the owning side to null (unless already changed)
-            if ($order->getClientId() === $this) {
-                $order->setClientId(null);
+            if ($order->getClient() === $this) {
+                $order->setClient(null);
             }
         }
 

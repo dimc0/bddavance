@@ -6,6 +6,8 @@ use App\Repository\ProductsOrdersRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\Order;
+use App\Entity\Products;
 
 #[ORM\Entity(repositoryClass: ProductsOrdersRepository::class)]
 class ProductsOrders
@@ -15,22 +17,24 @@ class ProductsOrders
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'productsOrders')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?orders $orders_id = null;
+    // Relation ManyToOne vers Order
+    #[ORM\ManyToOne(targetEntity: Order::class, inversedBy: 'productsOrders')]
+    #[ORM\JoinColumn(name: 'order_id', referencedColumnName: 'id', nullable: false)]
+    private ?Order $order = null;
 
+    // Relation OneToMany vers Products
     /**
-     * @var Collection<int, products>
+     * @var Collection<int, Products>
      */
-    #[ORM\OneToMany(targetEntity: products::class, mappedBy: 'productsorders')]
-    private Collection $products_id;
+    #[ORM\OneToMany(targetEntity: Products::class, mappedBy: 'productsOrders')]
+    private Collection $products;
 
     #[ORM\Column]
     private ?int $quantity = null;
 
     public function __construct()
     {
-        $this->products_id = new ArrayCollection();
+        $this->products = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -38,45 +42,41 @@ class ProductsOrders
         return $this->id;
     }
 
-    public function getOrdersId(): ?orders
+    public function getOrder(): ?Order
     {
-        return $this->orders_id;
+        return $this->order;
     }
 
-    public function setOrdersId(?orders $orders_id): static
+    public function setOrder(?Order $order): static
     {
-        $this->orders_id = $orders_id;
-
+        $this->order = $order;
         return $this;
     }
 
     /**
-     * @return Collection<int, products>
+     * @return Collection<int, Products>
      */
-    public function getProductsId(): Collection
+    public function getProducts(): Collection
     {
-        return $this->products_id;
+        return $this->products;
     }
 
-    public function addProductsId(products $productsId): static
+    public function addProduct(Products $product): static
     {
-        if (!$this->products_id->contains($productsId)) {
-            $this->products_id->add($productsId);
-            $productsId->setProductsorders($this);
+        if (!$this->products->contains($product)) {
+            $this->products->add($product);
+            $product->setProductsOrders($this);
         }
-
         return $this;
     }
 
-    public function removeProductsId(products $productsId): static
+    public function removeProduct(Products $product): static
     {
-        if ($this->products_id->removeElement($productsId)) {
-            // set the owning side to null (unless already changed)
-            if ($productsId->getProductsorders() === $this) {
-                $productsId->setProductsorders(null);
+        if ($this->products->removeElement($product)) {
+            if ($product->getProductsOrders() === $this) {
+                $product->setProductsOrders(null);
             }
         }
-
         return $this;
     }
 
@@ -88,7 +88,6 @@ class ProductsOrders
     public function setQuantity(int $quantity): static
     {
         $this->quantity = $quantity;
-
         return $this;
     }
 }
