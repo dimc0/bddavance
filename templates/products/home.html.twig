@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block metatitle %}Connexion{% endblock %}
+
+{% block body %}
+    <main class="container">
+        <h1>Se connecter</h1>
+
+        {% if error %}
+            <article class="error">
+                {{ error }}
+            </article>
+        {% endif %}
+
+        <form method="post">
+            <label for="email">Email</label>
+            <input
+                type="email"
+                id="email"
+                name="email"
+                value="{{ email|default('') }}"
+                required
+            />
+
+            <label for="password">Mot de passe</label>
+            <input
+                type="password"
+                id="password"
+                name="password"
+                required
+            />
+
+            <button type="submit" id="connexion">Se connecter</button>
+        </form>
+    </main>
+{% endblock %}
