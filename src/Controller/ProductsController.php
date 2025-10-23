@@ -10,16 +10,25 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 #[Route('/products')]
 final class ProductsController extends AbstractController
 {
     #[Route(name: 'app_products_index', methods: ['GET'])]
-    public function index(ProductsRepository $productsRepository): Response
+    public function index(ProductsRepository $productsRepository, SessionInterface $session): Response
     {
-        return $this->render('products/index.html.twig', [
-            'products' => $productsRepository->findAll(),
-        ]);
+        $usertype = $session->get('userType', 'client'); // par défaut client
+
+        if ($usertype === "admin") {
+            return $this->render('products/indexadmin.html.twig', [
+                'products' => $productsRepository->findAll(),
+            ]);
+        } else {
+            return $this->render('products/indexclient.html.twig', [
+                'products' => $productsRepository->findAll(),
+            ]);
+        }
     }
 
     #[Route('/new', name: 'app_products_new', methods: ['GET', 'POST'])]
@@ -58,7 +67,6 @@ final class ProductsController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
-
             return $this->redirectToRoute('app_products_index', [], Response::HTTP_SEE_OTHER);
         }
 
@@ -68,17 +76,13 @@ final class ProductsController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'app_products_delete', methods: ['POST'])]
+    #[Route('/{id}/delete', name: 'app_products_delete', methods: ['POST'])]
     public function delete(Request $request, Products $product, EntityManagerInterface $entityManager): Response
     {
         if ($this->isCsrfTokenValid('delete'.$product->getId(), $request->request->get('_token'))) {
-
-            // Supprimer d'abord toutes les relations dans ProductsOrders
             foreach ($product->getProductsOrders() as $productsOrder) {
                 $entityManager->remove($productsOrder);
             }
-
-            // Puis supprimer le produit lui-même
             $entityManager->remove($product);
             $entityManager->flush();
         }
