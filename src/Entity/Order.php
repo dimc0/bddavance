@@ -2,12 +2,13 @@
 
 namespace App\Entity;
 
-use App\Repository\OrdersRepository;
+use App\Repository\OrderRepository;
+use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: OrdersRepository::class)]
+#[ORM\Entity(repositoryClass: OrderRepository::class)]
+#[ORM\Table(name: '`order`')] // protège le mot réservé SQL
 class Order
 {
     #[ORM\Id]
@@ -22,7 +23,7 @@ class Order
     #[ORM\JoinColumn(nullable: false)]
     private ?Client $client = null;
 
-    #[ORM\OneToMany(targetEntity: ProductsOrders::class, mappedBy: 'order')]
+    #[ORM\OneToMany(targetEntity: ProductsOrders::class, mappedBy: 'order', cascade: ['remove'])]
     private Collection $productsOrders;
 
     public function __construct()
@@ -40,7 +41,10 @@ class Order
     /**
      * @return Collection<int, ProductsOrders>
      */
-    public function getProductsOrders(): Collection { return $this->productsOrders; }
+    public function getProductsOrders(): Collection
+    {
+        return $this->productsOrders;
+    }
 
     public function addProductsOrder(ProductsOrders $productsOrder): static
     {

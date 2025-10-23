@@ -71,7 +71,14 @@ final class ProductsController extends AbstractController
     #[Route('/{id}', name: 'app_products_delete', methods: ['POST'])]
     public function delete(Request $request, Products $product, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$product->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete'.$product->getId(), $request->request->get('_token'))) {
+
+            // Supprimer d'abord toutes les relations dans ProductsOrders
+            foreach ($product->getProductsOrders() as $productsOrder) {
+                $entityManager->remove($productsOrder);
+            }
+
+            // Puis supprimer le produit lui-même
             $entityManager->remove($product);
             $entityManager->flush();
         }

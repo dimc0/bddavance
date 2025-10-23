@@ -28,18 +28,16 @@ class Products
     #[ORM\Column(type: Types::TEXT)]
     private ?string $description = null;
 
-    // Relation ManyToOne vers Category
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'products')]
-    #[ORM\JoinColumn(name: 'category_id', referencedColumnName: 'id', nullable: false)]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Category $category = null;
 
-    // Relation ManyToMany vers Order (table pivot gérée automatiquement)
-    #[ORM\ManyToMany(targetEntity: Order::class, mappedBy: 'products')]
-    private Collection $orders;
+    #[ORM\OneToMany(targetEntity: ProductsOrders::class, mappedBy: 'product', cascade: ['remove'])]
+    private Collection $productsOrders;
 
     public function __construct()
     {
-        $this->orders = new ArrayCollection();
+        $this->productsOrders = new ArrayCollection();
     }
 
     // --- Getters & Setters ---
@@ -52,34 +50,32 @@ class Products
     public function setStock(int $stock): static { $this->stock = $stock; return $this; }
     public function getDescription(): ?string { return $this->description; }
     public function setDescription(string $description): static { $this->description = $description; return $this; }
-
     public function getCategory(): ?Category { return $this->category; }
     public function setCategory(?Category $category): static { $this->category = $category; return $this; }
 
-    // --- Nouveau getter pour accéder à category_id directement ---
-    public function getCategoryId(): ?int
+    /**
+     * @return Collection<int, ProductsOrders>
+     */
+    public function getProductsOrders(): Collection
     {
-        return $this->category ? $this->category->getId() : null;
+        return $this->productsOrders;
     }
 
-    /**
-     * @return Collection<int, Order>
-     */
-    public function getOrders(): Collection { return $this->orders; }
-
-    public function addOrder(Order $order): static
+    public function addProductsOrder(ProductsOrders $productsOrder): static
     {
-        if (!$this->orders->contains($order)) {
-            $this->orders->add($order);
-            $order->addProduct($this);
+        if (!$this->productsOrders->contains($productsOrder)) {
+            $this->productsOrders->add($productsOrder);
+            $productsOrder->setProduct($this);
         }
         return $this;
     }
 
-    public function removeOrder(Order $order): static
+    public function removeProductsOrder(ProductsOrders $productsOrder): static
     {
-        if ($this->orders->removeElement($order)) {
-            $order->removeProduct($this);
+        if ($this->productsOrders->removeElement($productsOrder)) {
+            if ($productsOrder->getProduct() === $this) {
+                $productsOrder->setProduct(null);
+            }
         }
         return $this;
     }
