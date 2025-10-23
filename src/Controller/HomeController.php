@@ -12,20 +12,14 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 class HomeController extends AbstractController
 {
 
-    #[Route('/logout', name: 'logout')]
-    public function logout(SessionInterface $session): Response
-    {
-        $session->clear();
 
-        return $this->redirectToRoute('home');
-    }
-
-    #[Route('/home', name: 'home')]
+    #[Route('/', name: 'home')]
     public function renderHomePage(Request $request, Connection $connection, SessionInterface $session): Response
     {
         $email = $password = null;
         $error = null;
 
+        // Si déjà connecté
         if ($session->get('userType')) {
             return $this->redirectToRoute('app_products_index');
         }
@@ -63,5 +57,12 @@ class HomeController extends AbstractController
             'error' => $error,
             'email' => $email,
         ]);
+    }
+
+    #[Route('/logout', name: 'logout')]
+    public function logout(SessionInterface $session): Response
+    {
+        $session->clear();
+        return $this->redirectToRoute('home');
     }
 }
