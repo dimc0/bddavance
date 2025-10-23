@@ -2,9 +2,9 @@
 
 namespace App\Form;
 
-use App\Entity\category;
+use App\Entity\Category;
 use App\Entity\Products;
-use App\Entity\Productsorders;
+use App\Entity\Order;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -19,15 +19,17 @@ class ProductsType extends AbstractType
             ->add('price')
             ->add('stock')
             ->add('description')
-            ->add('category_id', EntityType::class, [
-                'class' => category::class,
-                'choice_label' => 'id',
+            ->add('category', EntityType::class, [
+                'class' => Category::class,
+                'choice_label' => 'name', // tu peux aussi mettre 'id'
             ])
-            ->add('productsorders', EntityType::class, [
-                'class' => Productsorders::class,
+            ->add('productsOrders', EntityType::class, [
+                'class' => Order::class,
                 'choice_label' => 'id',
-            ])
-        ;
+                'multiple' => true,
+                'expanded' => true, // cases à cocher pour les commandes
+                'mapped' => false,  // optionnel si tu veux gérer la persistance manuellement
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
