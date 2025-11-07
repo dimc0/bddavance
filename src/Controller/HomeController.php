@@ -2,19 +2,25 @@
 
 namespace App\Controller;
 
+use App\Entity\Client;
+use App\Entity\Order;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Doctrine\DBAL\Connection;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class HomeController extends AbstractController
 {
-
-
     #[Route('/', name: 'home')]
-    public function renderHomePage(Request $request, Connection $connection, SessionInterface $session): Response
+    public function renderHomePage(
+        Request $request,
+        Connection $connection,
+        SessionInterface $session,
+        EntityManagerInterface $em
+    ): Response
     {
         $email = $password = null;
         $error = null;
@@ -47,6 +53,22 @@ class HomeController extends AbstractController
             if ($client) {
                 $session->set('userType', 'client');
                 $session->set('userData', $client);
+
+                // --- Créer une commande pending si elle n'existe pas ---
+                $clientEntity = $em->getRepository(Client::class)->find($client['id']);
+
+                $pendingOrder = $em->getRepository(Order::class)
+                    ->findOneBy(['client' => $clientEntity, 'status' => 'pending']);
+
+                if (!$pendingOrder) {
+                    $order = new Order();
+                    $order->setClient($clientEntity);
+                    $order->setStatus('pending');
+                    $em->persist($order);
+                    $em->flush();
+                }
+                // -------------------------------------------------------
+
                 return $this->redirectToRoute('app_products_index');
             }
 
