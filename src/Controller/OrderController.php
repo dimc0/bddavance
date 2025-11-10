@@ -3,77 +3,81 @@
 namespace App\Controller;
 
 use App\Entity\Order;
-use App\Entity\Products;
 use App\Entity\ProductsOrders;
 use App\Entity\Client;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\Response;
 
-#[Route('/cart')]
+#[Route('/order')]
 class OrderController extends AbstractController
 {
-    #[Route('/add/{id}', name: 'app_cart_add')]
-    public function add(Products $product, EntityManagerInterface $em, SessionInterface $session): Response
+    #[Route('/', name: 'app_order_index', methods: ['GET'])]
+    public function index(SessionInterface $session, EntityManagerInterface $em): Response
     {
         $userData = $session->get('userData');
         if (!$userData) {
-            $this->addFlash('error', 'Vous devez être connecté pour ajouter au panier.');
             return $this->redirectToRoute('home');
         }
 
-        // Récupérer l'entité client depuis la BDD
         $client = $em->getRepository(Client::class)->find($userData['id']);
 
-        // Chercher le panier en cours
-        $order = $em->getRepository(Order::class)->findOneBy([
+        $cart = $em->getRepository(Order::class)->findOneBy([
             'client' => $client,
-            'status' => 'pending'
+            'status' => 'panier',
         ]);
 
-        // Si aucun panier, le créer
-        if (!$order) {
-            $order = new Order();
-            $order->setClient($client);
-            $order->setStatus('pending');
-            $em->persist($order);
-        }
-
-        // Ajouter le produit au panier
-        $productsOrder = new ProductsOrders();
-        $productsOrder->setOrder($order);
-        $productsOrder->setProduct($product);
-        $productsOrder->setQuantity(1);
-
-        $em->persist($productsOrder);
-        $order->addProductsOrder($productsOrder);
-
-        $em->flush();
-
-        $this->addFlash('success', $product->getName() . ' a été ajouté au panier.');
-        return $this->redirectToRoute('app_products_index');
+        return $this->render('showcart.html.twig', [
+            'cart' => $cart,
+        ]);
     }
 
-    #[Route('/', name: 'app_cart_index')]
-    public function index(EntityManagerInterface $em, SessionInterface $session): Response
+    #[Route('/update/{id}', name: 'app_order_update', methods: ['POST'])]
+    public function updateQuantity(Request $request, ProductsOrders $productsOrder, EntityManagerInterface $em): Response
+    {
+        $quantity = (int) $request->request->get('quantity', 1);
+        if ($quantity < 1) {
+            $em->remove($productsOrder);
+        } else {
+            $productsOrder->setQuantity($quantity);
+        }
+        $em->flush();
+
+        return $this->redirectToRoute('app_order_index');
+    }
+
+    #[Route('/remove/{id}', name: 'app_order_remove', methods: ['POST'])]
+    public function removeProduct(ProductsOrders $productsOrder, EntityManagerInterface $em): Response
+    {
+        $em->remove($productsOrder);
+        $em->flush();
+
+        return $this->redirectToRoute('app_order_index');
+    }
+
+    #[Route('/checkout', name: 'app_order_checkout', methods: ['POST'])]
+    public function checkout(SessionInterface $session, EntityManagerInterface $em): Response
     {
         $userData = $session->get('userData');
         if (!$userData) {
-            $this->addFlash('error', 'Vous devez être connecté pour voir le panier.');
             return $this->redirectToRoute('home');
         }
 
         $client = $em->getRepository(Client::class)->find($userData['id']);
 
-        $order = $em->getRepository(Order::class)->findOneBy([
+        $cart = $em->getRepository(Order::class)->findOneBy([
             'client' => $client,
-            'status' => 'pending'
+            'status' => 'panier',
         ]);
 
-        return $this->render('cart/index.html.twig', [
-            'order' => $order
-        ]);
+        if ($cart) {
+            $cart->setStatus('confirmed'); // ou "paid"
+            $em->flush();
+        }
+
+        return $this->redirectToRoute('app_products_index');
     }
 }
