@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon panier{% endblock %}
+
+{% block body %}
+    <h1>🛒 Mon panier</h1>
+
+    {% if cart and cart.productsOrders|length > 0 %}
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Produit</th>
+                <th>Prix unitaire</th>
+                <th>Quantité</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% set total = 0 %}
+            {% for item in cart.productsOrders %}
+                {% set total = total + (item.product.price * item.quantity) %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.product.price }} €</td>
+                    <td>
+                        {{ item.quantity }}
+                    </td>
+                    <td>{{ item.product.price * item.quantity }} €</td>
+                    <td>
+                        <form action="{{ path('app_order_remove', {'id': item.id}) }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger">❌</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="3" class="text-end"><strong>Total :</strong></td>
+                <td colspan="2"><strong>{{ total }} €</strong></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <form action="{{ path('app_order_checkout') }}" method="post">
+            <button type="submit" class="btn btn-success">✅ Valider la commande</button>
+        </form>
+
+    {% else %}
+        <p>Votre panier est vide.</p>
+    {% endif %}
+
+    <a href="{{ path('app_products_index') }}" class="btn btn-secondary">⬅️ Retour aux produits</a>
+{% endblock %}
